@@ -43,10 +43,7 @@
     "typescript": "^5.7.0"
   },
   "files": [
-    "dist/",
-    "src/",
-    "tsconfig.json",
-    "firebase-service-account.json.template"
+    "dist/"
   ],
   "repository": {
     "type": "git",
