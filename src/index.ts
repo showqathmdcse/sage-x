@@ -15,8 +15,7 @@ import { createAuthUI, firebaseAuth } from './auth';
 const chalk = require('chalk');
 
 async function main(): Promise<void> {
-  const invokedAs = path.basename(process.argv[1] || '').replace(/\.js$/, '');
-  const brand = invokedAs === 'sage-x' ? 'sage' : 'aava';
+  const brand: 'aava' | 'sage' = 'sage';
   const ui = new TerminalUI(brand);
   const authUI = createAuthUI(brand);
   const engine = new ConversationEngine(ui);

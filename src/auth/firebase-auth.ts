@@ -1,6 +1,6 @@
 // ============================================
 // Firebase Authentication Module (Client-side only)
-// No admin SDK — uses browser-based Google Sign-In
+// Google Sign-In + Firestore role check
 // ============================================
 import * as fs from 'fs';
 import * as path from 'path';
@@ -12,7 +12,7 @@ import express, { Request, Response } from 'express';
 const AUTH_DIR = path.join(os.homedir(), '.aava-code');
 const AUTH_TOKEN_FILE = path.join(AUTH_DIR, 'auth-token.json');
 
-// Safe to embed — these are client-side Firebase config (designed to be public)
+// Safe to embed — client-side Firebase config (designed to be public)
 const FIREBASE_CONFIG = {
   projectId: 'sage-x-ff6be',
   apiKey: 'AIzaSyAOGjBGB8vaKThGOzNYiuAsuNpv-vboHOk',
@@ -56,10 +56,60 @@ export class FirebaseAuth {
   }
 
   getProjectConfig(): { projectId: string; apiKey: string } {
-    return {
-      projectId: this.projectId,
-      apiKey: this.apiKey,
-    };
+    return { projectId: this.projectId, apiKey: this.apiKey };
+  }
+
+  /**
+   * Check if user is approved in Firestore
+   * Checks: firestore collection "users" → document {uid} → field "approved" === true
+   */
+  private async checkUserApproved(uid: string, idToken: string): Promise<{ approved: boolean; exists: boolean }> {
+    try {
+      const url = `https://firestore.googleapis.com/v1/projects/${this.projectId}/databases/(default)/documents/users/${uid}`;
+      const response = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${idToken}` },
+      });
+
+      if (response.status === 404) {
+        return { approved: false, exists: false };
+      }
+
+      if (!response.ok) {
+        return { approved: false, exists: false };
+      }
+
+      const doc: any = await response.json();
+      const approved = doc.fields?.approved?.booleanValue === true;
+      return { approved, exists: true };
+    } catch {
+      return { approved: false, exists: false };
+    }
+  }
+
+  /**
+   * Create user document in Firestore (pending approval)
+   */
+  private async createUserDoc(uid: string, email: string, name: string, idToken: string): Promise<void> {
+    try {
+      const url = `https://firestore.googleapis.com/v1/projects/${this.projectId}/databases/(default)/documents/users?documentId=${uid}`;
+      await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${idToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fields: {
+            email: { stringValue: email },
+            displayName: { stringValue: name || '' },
+            approved: { booleanValue: false },
+            requestedAt: { timestampValue: new Date().toISOString() },
+          },
+        }),
+      });
+    } catch {
+      // Silent fail — admin will see the user in Firebase Auth regardless
+    }
   }
 
   /**
@@ -91,6 +141,30 @@ export class FirebaseAuth {
             return;
           }
 
+          // Check Firestore for user approval
+          const { approved, exists } = await this.checkUserApproved(uid, idToken);
+
+          if (!exists) {
+            // First time sign-in — create pending user doc
+            await this.createUserDoc(uid, email, name, idToken);
+            res.send(this.getErrorHTML(
+              `Access pending approval.<br><br>Your account (${email}) has been registered.<br>Please contact the administrator to get approved.`
+            ));
+            this.stopServer();
+            resolve(null);
+            return;
+          }
+
+          if (!approved) {
+            res.send(this.getErrorHTML(
+              `Access not yet approved.<br><br>${email} is registered but not approved.<br>Please contact the administrator.`
+            ));
+            this.stopServer();
+            resolve(null);
+            return;
+          }
+
+          // User is approved — proceed
           try {
             const authToken: AuthToken = {
               uid: uid || this.extractUidFromToken(idToken),
@@ -159,9 +233,6 @@ export class FirebaseAuth {
     }
   }
 
-  /**
-   * Extract UID from JWT token payload (no verification needed for CLI)
-   */
   private extractUidFromToken(token: string): string {
     try {
       const payload = token.split('.')[1];
@@ -378,7 +449,7 @@ export class FirebaseAuth {
 
     <div class="info">
       🔒 Secure authentication via Firebase<br>
-      Your credentials are never stored locally
+      Access requires administrator approval
     </div>
   </div>
 
@@ -429,9 +500,6 @@ export class FirebaseAuth {
     `;
   }
 
-  /**
-   * Generate success HTML page
-   */
   private getSuccessHTML(name: string): string {
     const brandName = this.getBrandName();
     const brandEmoji = this.brand === 'sage' ? '🧙‍♂️' : '🚀';
@@ -488,41 +556,21 @@ export class FirebaseAuth {
       from { opacity: 0; transform: translateY(30px); }
       to { opacity: 1; transform: translateY(0); }
     }
-    .success-icon {
-      font-size: 80px;
-      margin-bottom: 24px;
-      animation: bounce 0.6s ease;
-    }
+    .success-icon { font-size: 80px; margin-bottom: 24px; animation: bounce 0.6s ease; }
     @keyframes bounce {
       0%, 100% { transform: translateY(0); }
       50% { transform: translateY(-20px); }
     }
-    .emoji {
-      font-size: 48px;
-      margin-bottom: 16px;
-    }
+    .emoji { font-size: 48px; margin-bottom: 16px; }
     h1 {
-      font-size: 32px;
-      font-weight: 700;
-      margin-bottom: 12px;
+      font-size: 32px; font-weight: 700; margin-bottom: 12px;
       background: linear-gradient(135deg, #34d399, #6c63ff);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
-    p {
-      color: #a0a0b0;
-      font-size: 18px;
-      margin-bottom: 32px;
-    }
+    p { color: #a0a0b0; font-size: 18px; margin-bottom: 32px; }
     .info {
-      background: rgba(52, 211, 153, 0.1);
-      border: 1px solid rgba(52, 211, 153, 0.3);
-      border-radius: 10px;
-      padding: 16px;
-      color: #34d399;
-      font-weight: 500;
-      font-size: 14px;
+      background: rgba(52, 211, 153, 0.1); border: 1px solid rgba(52, 211, 153, 0.3);
+      border-radius: 10px; padding: 16px; color: #34d399; font-weight: 500; font-size: 14px;
     }
   </style>
 </head>
@@ -532,21 +580,14 @@ export class FirebaseAuth {
     <div class="emoji">${brandEmoji}</div>
     <h1>Successfully Signed In!</h1>
     <p>Welcome, ${name}</p>
-    <div class="info">
-      You can now close this window and return to your terminal
-    </div>
+    <div class="info">You can now close this window and return to your terminal</div>
   </div>
-  <script>
-    setTimeout(() => window.close(), 3000);
-  </script>
+  <script>setTimeout(() => window.close(), 3000);</script>
 </body>
 </html>
     `;
   }
 
-  /**
-   * Generate error HTML page
-   */
   private getErrorHTML(message: string): string {
     const brandName = this.getBrandName();
 
@@ -564,94 +605,52 @@ export class FirebaseAuth {
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background-color: #0a0a0f;
-      color: #ffffff;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      position: relative;
-      overflow: hidden;
+      background-color: #0a0a0f; color: #ffffff; min-height: 100vh;
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+      position: relative; overflow: hidden;
     }
     body::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 600px;
-      height: 600px;
+      content: ''; position: absolute; top: -50%; left: 50%; transform: translateX(-50%);
+      width: 600px; height: 600px;
       background: radial-gradient(circle, rgba(239, 68, 68, 0.15) 0%, transparent 70%);
       pointer-events: none;
     }
     .container {
-      background: #1a1a2e;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 20px;
-      padding: 60px 40px;
-      max-width: 480px;
-      width: 100%;
-      text-align: center;
-      position: relative;
-      z-index: 1;
-      box-shadow: 0 25px 80px rgba(239, 68, 68, 0.1);
-      animation: fadeInUp 0.8s ease forwards;
+      background: #1a1a2e; border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px; padding: 60px 40px; max-width: 480px; width: 100%;
+      text-align: center; position: relative; z-index: 1;
+      box-shadow: 0 25px 80px rgba(239, 68, 68, 0.1); animation: fadeInUp 0.8s ease forwards;
     }
     @keyframes fadeInUp {
       from { opacity: 0; transform: translateY(30px); }
       to { opacity: 1; transform: translateY(0); }
     }
-    .error-icon {
-      font-size: 80px;
-      margin-bottom: 24px;
-    }
-    h1 {
-      color: #ef4444;
-      font-size: 32px;
-      margin-bottom: 12px;
-      font-weight: 700;
-    }
-    p {
-      color: #a0a0b0;
-      font-size: 16px;
-      margin-bottom: 32px;
-      line-height: 1.5;
-    }
+    .error-icon { font-size: 80px; margin-bottom: 24px; }
+    h1 { color: #ef4444; font-size: 32px; margin-bottom: 12px; font-weight: 700; }
+    p { color: #a0a0b0; font-size: 16px; margin-bottom: 32px; line-height: 1.5; }
     .info {
-      background: rgba(239, 68, 68, 0.1);
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      border-radius: 10px;
-      padding: 16px;
-      color: #fca5a5;
-      font-size: 14px;
-      line-height: 1.5;
+      background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 10px; padding: 16px; color: #fca5a5; font-size: 14px; line-height: 1.5;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="error-icon">❌</div>
-    <h1>Sign-In Failed</h1>
+    <div class="error-icon">🔒</div>
+    <h1>Access Denied</h1>
     <p>${message}</p>
-    <div class="info">
-      Please close this window and try again from your terminal
-    </div>
+    <div class="info">Please close this window and contact the administrator</div>
   </div>
 </body>
 </html>
     `;
   }
 
-  /**
-   * Verify existing token (checks expiry only — no server-side verification needed)
-   */
   async verifyToken(idToken?: string): Promise<boolean> {
     try {
       const authToken = this.loadToken();
       if (!authToken || !authToken.idToken) return false;
 
-      // Check if token is expired (7 days)
       const tokenAge = Date.now() - authToken.timestamp;
       if (tokenAge > 7 * 24 * 60 * 60 * 1000) {
         return false;
@@ -663,9 +662,6 @@ export class FirebaseAuth {
     }
   }
 
-  /**
-   * Get current authenticated user
-   */
   async getCurrentUser(): Promise<AuthToken | null> {
     const token = this.loadToken();
     if (!token) return null;
@@ -679,9 +675,6 @@ export class FirebaseAuth {
     return token;
   }
 
-  /**
-   * Sign out
-   */
   signOut(): void {
     this.clearToken();
   }
@@ -699,9 +692,7 @@ export class FirebaseAuth {
         const raw = fs.readFileSync(AUTH_TOKEN_FILE, 'utf-8');
         return JSON.parse(raw);
       }
-    } catch (error) {
-      // Invalid token file
-    }
+    } catch (error) {}
     return null;
   }
 
