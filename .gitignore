@@ -1,0 +1,23 @@
+node_modules/
+bin/
+.DS_Store
+*.log
+
+# Firebase credentials - NEVER COMMIT
+firebase-service-account.json
+google-services.json
+
+# User configuration
+.aava-code/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+
+# Backups
+*.bak
+*.bak2
+*.bak3
