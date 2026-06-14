@@ -1,7 +1,7 @@
 // ============================================
-// Firebase Authentication Module
+// Firebase Authentication Module (Client-side only)
+// No admin SDK — uses browser-based Google Sign-In
 // ============================================
-import * as admin from 'firebase-admin';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -12,33 +12,11 @@ import express, { Request, Response } from 'express';
 const AUTH_DIR = path.join(os.homedir(), '.aava-code');
 const AUTH_TOKEN_FILE = path.join(AUTH_DIR, 'auth-token.json');
 
-// Embedded Firebase configuration
-const EMBEDDED_SERVICE_ACCOUNT = {
-  type: 'service_account',
-  project_id: 'sage-x-ff6be',
-  private_key_id: 'c99dc765c7f78c0d3d4570a1dbda687ee76aba44',
-  private_key: '-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC8dL/CnOLkbZ/n\nwKqk3IyvCeDn0xTcKCldXYTgdrI1ncNJ4+w77rBoLNm5TaXYXuwDyfuWahBbBGCW\nQI4X6EZgpWe3+7oV84llgzfntgPhEQjCVmH2U9OAkLQFbkNw27c43eASbFFrjcJK\nlzRYQ6ydBLKxKd7CC611TlfuwX++Jhi8RdCuNiOHRoVHZz5lGvgaEcXGhBSr+OUu\nsaHi0UDz/D7znzB6oU9vRqViVpmGj0SozP1sw2EfMxIQsOmNL3VuedD43jmwb4CT\nCGaB9NgPAeJabLj+MVHxLEYanasQPXnnWH7v6zK2lKdNqDGou0EitMeahkAvjGc/\n32ClbwHtAgMBAAECggEAItm2Qo+Pt+175jgvdmhgzdfWUxiqYWI98Amk0nuwzhB8\nNlRjcdvcnI86vjVZR4+aNsMp9vFrT+GZ2P9cJ5ipNyMvcIspKPkN/gtLkdqLkhn7\n1DB0UkDDOqHH4L840oyXL/l7//wu/GRNO00F/ZKaP7lIMFINYzYUoD5aLYl0DZ4d\noRC4TCJzKiLw4Ip7NLHwcmprokbjiEWMWe+Vcf9j+z4XUubgrq9t6mdOLCJJ1OUh\n1zOm6/mQX6gGiS8+LVrxKuxC6NknrCUhKIBsNIqrt8bp2GCIX4gVFIhbJC/JTEwU\nazlaU5wfvGJDEOVL1WbbNZjnmAMOOJAqkReKGWKtEwKBgQDldsjytsDDwYcesrtI\nY2IzEZANVRwo5i5ZOyojD4UEnnwPHvdu2Zy1B0TemUVFxYj33H7WIr6ekkkZ9FCh\n/9Y0V3c0js8z5ttNQ2yP5bjTQFoRztaJKUqBTY/XsqiQBL8Hg9KIsAilb06+fXdV\noWp8F20iBJCVd6JuStJ2MzxfowKBgQDSP++D087oeoQTlsQRUKUMYRFQP+zEeEzB\nuF17+40VbDIi0a7qT33QtNkB7lm/f5uEsWfDMfhqsf9aJhOCzM9lBd7SVsWkE6Po\n1tC0bGolWSqt80LHB1K4KmtWeQwmsUUKYiJNd5ZanWGHXp2QZ3PnyteAOJJflNoo\nwMo5/HvxLwKBgQDkc77c5tZEDwlXptqO12ONNI8WtwWyMnkynZT2Ex17283nwAzY\ncA90rCgE9tPhAym6m+wrhawCc+IT1QnyP6QjuHEWApiIM+9inR4Ypb29lPQXhrZR\nGKr00SPEvDrWJ+OIt9WEAL6a9paPUJrexjYeFbSxiZnpNZKh/BxNUfVpwQKBgQC3\nGk1KXoUce85YjP2WIsiKnmKIpBNcC3S1ZQ2tMybsWDzVjA0sLCxjPYycHOr2Vnin\nOCUonnU83mWHKg/l4t5fmZwzTLR1L1GZLrO13ZEXk68SrP8j/CGzF+ZA+cx2Sf3Z\njBtZoeNEaTmNvf20zBPp8wJ4vUvkh+rygOvdUiDSqwKBgAOT+7eZRXTBC7G7qQAc\nC0Nwa0gKGt1XEDRA63mCVVnX2IvvTFJJkq7qH+1qmaYtOI3YZ8eYYG3EyHQeguh3\n6N99vtc/qusvE5dwyJoD/pqK4OT07jaFrhFrRF0zugPBC1mqfB3hfISV6Kc+/CMt\n1z1vyp04JNKV/khrOx0yn2N7\n-----END PRIVATE KEY-----\n',
-  client_email: 'firebase-adminsdk-fbsvc@sage-x-ff6be.iam.gserviceaccount.com',
-  client_id: '116418327864338526246',
-  auth_uri: 'https://accounts.google.com/o/oauth2/auth',
-  token_uri: 'https://oauth2.googleapis.com/token',
-  auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs',
-  client_x509_cert_url: 'https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40sage-x-ff6be.iam.gserviceaccount.com',
-  universe_domain: 'googleapis.com',
-};
-
-const EMBEDDED_PROJECT_CONFIG = {
+// Safe to embed — these are client-side Firebase config (designed to be public)
+const FIREBASE_CONFIG = {
   projectId: 'sage-x-ff6be',
   apiKey: 'AIzaSyAOGjBGB8vaKThGOzNYiuAsuNpv-vboHOk',
 };
-
-// Fallback to file-based config if present
-const getInstallDir = (): string => {
-  return path.join(__dirname, '..', '..');
-};
-
-const SERVICE_ACCOUNT_PATH = path.join(getInstallDir(), 'firebase-service-account.json');
-const GOOGLE_SERVICES_PATH = path.join(getInstallDir(), 'google-services.json');
 
 export interface AuthToken {
   uid: string;
@@ -49,23 +27,11 @@ export interface AuthToken {
   timestamp: number;
 }
 
-interface GoogleServicesConfig {
-  project_info: {
-    project_id: string;
-  };
-  client: Array<{
-    api_key: Array<{
-      current_key: string;
-    }>;
-  }>;
-}
-
 export class FirebaseAuth {
   private static instance: FirebaseAuth;
-  private initialized = false;
   private server: http.Server | null = null;
-  private projectId: string = '';
-  private apiKey: string = '';
+  private projectId: string = FIREBASE_CONFIG.projectId;
+  private apiKey: string = FIREBASE_CONFIG.apiKey;
   private brand: 'aava' | 'sage' = 'aava';
 
   private constructor() {}
@@ -85,54 +51,10 @@ export class FirebaseAuth {
     return this.brand === 'sage' ? 'Sage-X' : 'AAVA Code';
   }
 
-  /**
-   * Initialize Firebase Admin SDK
-   */
   async initialize(): Promise<boolean> {
-    if (this.initialized) return true;
-
-    try {
-      let serviceAccount: any;
-
-      // Use file-based config if available, otherwise use embedded
-      if (fs.existsSync(SERVICE_ACCOUNT_PATH)) {
-        serviceAccount = JSON.parse(
-          fs.readFileSync(SERVICE_ACCOUNT_PATH, 'utf-8')
-        );
-      } else {
-        serviceAccount = EMBEDDED_SERVICE_ACCOUNT;
-      }
-
-      // Load project config
-      if (fs.existsSync(GOOGLE_SERVICES_PATH)) {
-        const googleServices: GoogleServicesConfig = JSON.parse(
-          fs.readFileSync(GOOGLE_SERVICES_PATH, 'utf-8')
-        );
-        this.projectId = googleServices.project_info.project_id;
-        this.apiKey = googleServices.client[0].api_key[0].current_key;
-      } else {
-        this.projectId = EMBEDDED_PROJECT_CONFIG.projectId;
-        this.apiKey = EMBEDDED_PROJECT_CONFIG.apiKey;
-      }
-
-      // Initialize Firebase Admin
-      if (!admin.apps.length) {
-        admin.initializeApp({
-          credential: admin.credential.cert(serviceAccount),
-        });
-      }
-
-      this.initialized = true;
-      return true;
-    } catch (error) {
-      console.error('Failed to initialize Firebase:', error);
-      return false;
-    }
+    return true;
   }
 
-  /**
-   * Get Firebase project configuration
-   */
   getProjectConfig(): { projectId: string; apiKey: string } {
     return {
       projectId: this.projectId,
@@ -145,26 +67,23 @@ export class FirebaseAuth {
    */
   async signInWithGoogle(): Promise<AuthToken | null> {
     try {
-      if (!this.initialized) {
-        const init = await this.initialize();
-        if (!init) return null;
-      }
-
       const PORT = 3456;
       const REDIRECT_URI = `http://localhost:${PORT}/callback`;
 
       return new Promise((resolve) => {
         const app = express();
-        
-        // Serve the sign-in page
+
         app.get('/', (req: Request, res: Response) => {
           res.send(this.getSignInHTML(REDIRECT_URI));
         });
 
-        // Handle the callback
         app.get('/callback', async (req: Request, res: Response) => {
           const idToken = req.query.token as string;
-          
+          const email = req.query.email as string;
+          const name = req.query.name as string;
+          const uid = req.query.uid as string;
+          const photo = req.query.photo as string;
+
           if (!idToken) {
             res.send(this.getErrorHTML('No token received'));
             this.stopServer();
@@ -173,43 +92,33 @@ export class FirebaseAuth {
           }
 
           try {
-            // Verify the ID token
-            const decodedToken = await admin.auth().verifyIdToken(idToken);
-            const user = await admin.auth().getUser(decodedToken.uid);
-
             const authToken: AuthToken = {
-              uid: user.uid,
-              email: user.email,
-              displayName: user.displayName || undefined,
-              photoURL: user.photoURL || undefined,
+              uid: uid || this.extractUidFromToken(idToken),
+              email: email || undefined,
+              displayName: name || undefined,
+              photoURL: photo || undefined,
               idToken,
               timestamp: Date.now(),
             };
 
-            // Save token locally
             this.saveToken(authToken);
+            res.send(this.getSuccessHTML(name || email || 'User'));
 
-            res.send(this.getSuccessHTML(user.displayName || user.email || 'User'));
-            
-            // Stop server after a short delay
             setTimeout(() => {
               this.stopServer();
               resolve(authToken);
             }, 2000);
           } catch (error: any) {
-            console.error('Token verification failed:', error);
             res.send(this.getErrorHTML(error.message));
             this.stopServer();
             resolve(null);
           }
         });
 
-        // Start server
         this.server = app.listen(PORT, () => {
           console.log(`\n  🌐 Opening browser for Google Sign-In...`);
           console.log(`  📍 If browser doesn't open, visit: http://localhost:${PORT}\n`);
-          
-          // Open browser using platform-specific command
+
           const url = `http://localhost:${PORT}`;
           const platform = process.platform;
           let command: string;
@@ -219,7 +128,6 @@ export class FirebaseAuth {
           } else if (platform === 'win32') {
             command = `start "" "${url}"`;
           } else {
-            // Linux
             command = `xdg-open "${url}"`;
           }
 
@@ -230,7 +138,6 @@ export class FirebaseAuth {
           });
         });
 
-        // Timeout after 5 minutes
         setTimeout(() => {
           if (this.server) {
             console.log('\n  ⏱️  Sign-in timeout. Please try again.\n');
@@ -245,13 +152,23 @@ export class FirebaseAuth {
     }
   }
 
-  /**
-   * Stop the local server
-   */
   private stopServer(): void {
     if (this.server) {
       this.server.close();
       this.server = null;
+    }
+  }
+
+  /**
+   * Extract UID from JWT token payload (no verification needed for CLI)
+   */
+  private extractUidFromToken(token: string): string {
+    try {
+      const payload = token.split('.')[1];
+      const decoded = JSON.parse(Buffer.from(payload, 'base64url').toString());
+      return decoded.sub || decoded.user_id || 'unknown';
+    } catch {
+      return 'unknown';
     }
   }
 
@@ -487,8 +404,17 @@ export class FirebaseAuth {
 
         const result = await signInWithPopup(auth, provider);
         const idToken = await result.user.getIdToken();
+        const user = result.user;
 
-        window.location.href = '${redirectUri}?token=' + encodeURIComponent(idToken);
+        const params = new URLSearchParams({
+          token: idToken,
+          email: user.email || '',
+          name: user.displayName || '',
+          uid: user.uid,
+          photo: user.photoURL || '',
+        });
+
+        window.location.href = '${redirectUri}?' + params.toString();
       } catch (error) {
         console.error('Sign-in error:', error);
         alert('Sign-in failed: ' + error.message);
@@ -718,19 +644,12 @@ export class FirebaseAuth {
   }
 
   /**
-   * Verify existing token
+   * Verify existing token (checks expiry only — no server-side verification needed)
    */
   async verifyToken(idToken?: string): Promise<boolean> {
     try {
-      if (!this.initialized) {
-        const init = await this.initialize();
-        if (!init) return false;
-      }
-
       const authToken = this.loadToken();
       if (!authToken || !authToken.idToken) return false;
-
-      const tokenToVerify = idToken || authToken.idToken;
 
       // Check if token is expired (7 days)
       const tokenAge = Date.now() - authToken.timestamp;
@@ -738,8 +657,6 @@ export class FirebaseAuth {
         return false;
       }
 
-      // Verify the ID token
-      await admin.auth().verifyIdToken(tokenToVerify);
       return true;
     } catch (error) {
       return false;
@@ -769,9 +686,6 @@ export class FirebaseAuth {
     this.clearToken();
   }
 
-  /**
-   * Save token to local storage
-   */
   private saveToken(token: AuthToken): void {
     if (!fs.existsSync(AUTH_DIR)) {
       fs.mkdirSync(AUTH_DIR, { recursive: true });
@@ -779,9 +693,6 @@ export class FirebaseAuth {
     fs.writeFileSync(AUTH_TOKEN_FILE, JSON.stringify(token, null, 2));
   }
 
-  /**
-   * Load token from local storage
-   */
   private loadToken(): AuthToken | null {
     try {
       if (fs.existsSync(AUTH_TOKEN_FILE)) {
@@ -794,18 +705,12 @@ export class FirebaseAuth {
     return null;
   }
 
-  /**
-   * Clear stored token
-   */
   private clearToken(): void {
     if (fs.existsSync(AUTH_TOKEN_FILE)) {
       fs.unlinkSync(AUTH_TOKEN_FILE);
     }
   }
 
-  /**
-   * Check if Firebase is configured
-   */
   isConfigured(): boolean {
     return true;
   }

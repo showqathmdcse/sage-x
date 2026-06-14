@@ -8,7 +8,6 @@ export interface AuthToken {
 }
 export declare class FirebaseAuth {
     private static instance;
-    private initialized;
     private server;
     private projectId;
     private apiKey;
@@ -17,13 +16,7 @@ export declare class FirebaseAuth {
     static getInstance(): FirebaseAuth;
     setBrand(brand: 'aava' | 'sage'): void;
     private getBrandName;
-    /**
-     * Initialize Firebase Admin SDK
-     */
     initialize(): Promise<boolean>;
-    /**
-     * Get Firebase project configuration
-     */
     getProjectConfig(): {
         projectId: string;
         apiKey: string;
@@ -32,10 +25,11 @@ export declare class FirebaseAuth {
      * Start Google Sign-In flow with browser redirect
      */
     signInWithGoogle(): Promise<AuthToken | null>;
-    /**
-     * Stop the local server
-     */
     private stopServer;
+    /**
+     * Extract UID from JWT token payload (no verification needed for CLI)
+     */
+    private extractUidFromToken;
     /**
      * Generate sign-in HTML page
      */
@@ -49,7 +43,7 @@ export declare class FirebaseAuth {
      */
     private getErrorHTML;
     /**
-     * Verify existing token
+     * Verify existing token (checks expiry only — no server-side verification needed)
      */
     verifyToken(idToken?: string): Promise<boolean>;
     /**
@@ -60,21 +54,9 @@ export declare class FirebaseAuth {
      * Sign out
      */
     signOut(): void;
-    /**
-     * Save token to local storage
-     */
     private saveToken;
-    /**
-     * Load token from local storage
-     */
     private loadToken;
-    /**
-     * Clear stored token
-     */
     private clearToken;
-    /**
-     * Check if Firebase is configured
-     */
     isConfigured(): boolean;
 }
 export declare const firebaseAuth: FirebaseAuth;
