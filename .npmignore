@@ -1,0 +1,19 @@
+node_modules/
+bin/
+src/
+*.ts
+!dist/**
+tsconfig.json
+.DS_Store
+*.log
+*.bak
+*.bak2
+*.bak3
+firebase-service-account.json
+google-services.json
+.aava-code/
+.vscode/
+.idea/
+Windows PowerShell.txt
+check-firebase-setup.js
+install.sh
