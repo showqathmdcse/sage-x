@@ -1,132 +1,141 @@
-# AAVA Code
+# Sage-X
 
-Multi-cloud AI coding assistant CLI - supports Azure OpenAI, Amazon Bedrock, GCP Vertex AI.
+Multi-cloud AI coding assistant CLI — supports Azure OpenAI, Amazon Bedrock, and GCP Vertex AI (Gemini).
 
-**🔐 Secure with Google Sign-In** - Authentication required on startup
+**Wisdom meets code.**
+
+---
+
+## Installation
+
+**Prerequisites:** Node.js v18+ ([download](https://nodejs.org))
+
+```bash
+npm install -g github:showqathmdcse/sage-x
+```
+
+That's it. Now run from any directory:
+
+```bash
+sage-x
+```
+
+---
+
+## Update to Latest Version
+
+```bash
+npm install -g github:showqathmdcse/sage-x
+```
+
+Re-running the install command always pulls the latest from GitHub.
+
+---
+
+## Uninstall
+
+```bash
+npm uninstall -g aava-code
+```
+
+---
 
 ## Features
 
-- 🤖 Multi-cloud AI support (Azure OpenAI, Amazon Bedrock, GCP Vertex AI)
-- 🔐 **Google Sign-In authentication** (required on startup)
-- 💬 Interactive conversation mode
-- 🛠️ Code editing and file operations
-- 📝 Conversation save/load
-- 🎨 Beautiful terminal UI with markdown support
-- 🔒 Secure 7-day sessions
+- Multi-cloud AI: Azure OpenAI, Amazon Bedrock, GCP Vertex AI
+- Models: GPT-5.x, Codex, Claude 4–8, Gemini 2.5, Llama 4, Mistral, Nova, DeepSeek
+- Google Sign-In authentication (Firebase)
+- Interactive terminal with command autocomplete (type `/`)
+- Tool calling: file read/write/edit, bash execution, grep, glob
+- Streaming responses with markdown rendering
+- Conversation save/load and token tracking
+- Sage-X dark theme UI
 
-## Prerequisites
+---
 
-### Install Node.js (v18+)
+## Quick Start
 
-**macOS:**
+1. **Install:**
+   ```bash
+   npm install -g github:showqathmdcse/sage-x
+   ```
 
-```bash
-# Option 1: Using Homebrew (recommended)
-brew install node
+2. **Run:**
+   ```bash
+   sage-x
+   ```
 
-# Option 2: Using the installer
-# Download from https://nodejs.org and run the .pkg file
-```
+3. **Configure a provider:**
+   ```
+   /config
+   ```
+   Pick your cloud provider and enter credentials (API key, endpoint, etc.)
 
-**Windows:**
+4. **Start coding:**
+   ```
+   > read the main file and explain the architecture
+   ```
 
-```bash
-# Option 1: Using winget
-winget install OpenJS.NodeJS.LTS
+---
 
-# Option 2: Using the installer
-# Download from https://nodejs.org and run the .msi file
-```
+## Commands
 
-**Linux (Ubuntu/Debian):**
+Type `/` inside the CLI to see autocomplete suggestions:
 
-```bash
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt install -y nodejs
-```
+| Command | Description |
+|---------|-------------|
+| `/provider` | Switch cloud provider (Azure, AWS, GCP) |
+| `/model` | Switch AI model |
+| `/config` | Configure provider credentials |
+| `/status` | Show current provider and model |
+| `/signin` | Sign in with Google (Firebase) |
+| `/signout` | Sign out |
+| `/auth` | Check authentication status |
+| `/save [name]` | Save conversation |
+| `/load [name]` | Load a saved conversation |
+| `/compact` | Compress conversation to save context |
+| `/tokens` | Show token usage summary |
+| `/clear` | Clear conversation history |
+| `/help` | Show all commands |
+| `/exit` | Exit |
 
-**Verify installation:**
+---
 
-```bash
-node -v   # Should show v18.x.x or higher
-npm -v    # Should show 9.x.x or higher
-```
+## Supported Models
 
-## Setup
+### Azure OpenAI
+GPT-5.4 Pro, GPT-5.4, GPT-5.2, GPT-5.1 Codex, GPT-5, GPT-5 Mini, GPT-5 Nano, Codex Mini, GPT-4.1, GPT-4.1 Mini, GPT-4.1 Nano, GPT-4o, GPT-4o Mini, O3, O3 Mini, O4 Mini
 
-```bash
-cd aava-code
+### Amazon Bedrock
+Claude Opus/Sonnet/Haiku 8, 7, 6, 4 — Llama 4 Maverick, Llama 4 Scout, Llama 3.3 70B — Mistral Large — Amazon Nova Pro/Lite/Micro — DeepSeek R1
 
-# Install dependencies
-npm install
+### GCP Vertex AI / Google GenAI
+Gemini 2.5 Pro, Gemini 2.5 Flash, Gemini 2.0 Flash, Gemini 2.0 Flash Lite, Gemini 1.5 Pro, Gemini 1.5 Flash
 
-# Build the project
-npm run build
-
-# Link globally so you can use it from anywhere
-npm link
-```
-
-## Usage
-
-Once linked, open any terminal and type:
-
-```bash
-aava-code
-```
-
-It will launch the CLI in whatever directory you're in.
-
-### Commands inside the CLI
-
-- `/provider` - Pick your cloud provider (Azure, Bedrock, Vertex AI)
-- `/model` - Switch AI model
-- `/config` - Add your credentials
-- `/signin` - Sign in with Firebase authentication
-- `/signout` - Sign out
-- `/auth` - Check authentication status
-- `/save [name]` - Save conversation
-- `/load [name]` - Load conversation
-- `/clear` - Clear conversation history
-- `/tokens` - Show token usage
-- `/help` - Show all commands
-- `/exit` - Exit the CLI
+---
 
 ## Firebase Authentication Setup
 
-**Authentication is now REQUIRED** - you must sign in with Google to use AAVA Code.
+Authentication is required on first use.
 
-### Quick Setup:
+1. Get Firebase service account key from [Firebase Console](https://console.firebase.google.com/)
+2. Save as `firebase-service-account.json` in the install directory
+3. Enable Google Sign-In in Firebase Console (Authentication > Sign-in method)
+4. Run `sage-x` — browser opens for Google Sign-In
 
-1. **Get Firebase service account key** from [Firebase Console](https://console.firebase.google.com/)
-   - Select project: **sage-x-ff6be**
-   - Settings → Service Accounts → Generate New Private Key
-   - Save as `firebase-service-account.json` in project root
-
-2. **Enable Google Sign-In** in Firebase Console
-   - Authentication → Sign-in method
-   - Enable "Google"
-
-3. **You already have** `google-services.json` ✓
-
-4. **Verify setup**:
-   ```bash
-   npm run check-firebase
-   ```
-
-5. **Start the CLI**:
-   ```bash
-   npm start
-   ```
-   - Browser will open automatically for Google Sign-In
-   - Sign in with your Google account
-   - Return to terminal and start coding!
-
-For detailed setup instructions, see [GOOGLE_AUTH_UPDATE.md](GOOGLE_AUTH_UPDATE.md)
+---
 
 ## Development
 
 ```bash
-# Run without building (uses ts-node)
+git clone git@github.com:showqathmdcse/sage-x.git
+cd sage-x
+npm install
 npm run dev
 ```
+
+---
+
+## License
+
+MIT
