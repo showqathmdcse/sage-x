@@ -1,19 +1,16 @@
 node_modules/
 bin/
 src/
-*.ts
-!dist/**
-tsconfig.json
+.git/
 .DS_Store
 *.log
-*.bak
-*.bak2
-*.bak3
+*.bak*
 firebase-service-account.json
 google-services.json
 .aava-code/
 .vscode/
 .idea/
-Windows PowerShell.txt
+*.txt
 check-firebase-setup.js
 install.sh
+tsconfig.json

@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "prepare": "echo 'skip build'",
+    "prepare": "node -e \"\"",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
     "check-firebase": "node check-firebase-setup.js",
