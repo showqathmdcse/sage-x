@@ -12,10 +12,28 @@ import express, { Request, Response } from 'express';
 const AUTH_DIR = path.join(os.homedir(), '.aava-code');
 const AUTH_TOKEN_FILE = path.join(AUTH_DIR, 'auth-token.json');
 
-// Get the installation directory (where the compiled code lives)
+// Embedded Firebase configuration
+const EMBEDDED_SERVICE_ACCOUNT = {
+  type: 'service_account',
+  project_id: 'sage-x-ff6be',
+  private_key_id: 'c99dc765c7f78c0d3d4570a1dbda687ee76aba44',
+  private_key: '-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC8dL/CnOLkbZ/n\nwKqk3IyvCeDn0xTcKCldXYTgdrI1ncNJ4+w77rBoLNm5TaXYXuwDyfuWahBbBGCW\nQI4X6EZgpWe3+7oV84llgzfntgPhEQjCVmH2U9OAkLQFbkNw27c43eASbFFrjcJK\nlzRYQ6ydBLKxKd7CC611TlfuwX++Jhi8RdCuNiOHRoVHZz5lGvgaEcXGhBSr+OUu\nsaHi0UDz/D7znzB6oU9vRqViVpmGj0SozP1sw2EfMxIQsOmNL3VuedD43jmwb4CT\nCGaB9NgPAeJabLj+MVHxLEYanasQPXnnWH7v6zK2lKdNqDGou0EitMeahkAvjGc/\n32ClbwHtAgMBAAECggEAItm2Qo+Pt+175jgvdmhgzdfWUxiqYWI98Amk0nuwzhB8\nNlRjcdvcnI86vjVZR4+aNsMp9vFrT+GZ2P9cJ5ipNyMvcIspKPkN/gtLkdqLkhn7\n1DB0UkDDOqHH4L840oyXL/l7//wu/GRNO00F/ZKaP7lIMFINYzYUoD5aLYl0DZ4d\noRC4TCJzKiLw4Ip7NLHwcmprokbjiEWMWe+Vcf9j+z4XUubgrq9t6mdOLCJJ1OUh\n1zOm6/mQX6gGiS8+LVrxKuxC6NknrCUhKIBsNIqrt8bp2GCIX4gVFIhbJC/JTEwU\nazlaU5wfvGJDEOVL1WbbNZjnmAMOOJAqkReKGWKtEwKBgQDldsjytsDDwYcesrtI\nY2IzEZANVRwo5i5ZOyojD4UEnnwPHvdu2Zy1B0TemUVFxYj33H7WIr6ekkkZ9FCh\n/9Y0V3c0js8z5ttNQ2yP5bjTQFoRztaJKUqBTY/XsqiQBL8Hg9KIsAilb06+fXdV\noWp8F20iBJCVd6JuStJ2MzxfowKBgQDSP++D087oeoQTlsQRUKUMYRFQP+zEeEzB\nuF17+40VbDIi0a7qT33QtNkB7lm/f5uEsWfDMfhqsf9aJhOCzM9lBd7SVsWkE6Po\n1tC0bGolWSqt80LHB1K4KmtWeQwmsUUKYiJNd5ZanWGHXp2QZ3PnyteAOJJflNoo\nwMo5/HvxLwKBgQDkc77c5tZEDwlXptqO12ONNI8WtwWyMnkynZT2Ex17283nwAzY\ncA90rCgE9tPhAym6m+wrhawCc+IT1QnyP6QjuHEWApiIM+9inR4Ypb29lPQXhrZR\nGKr00SPEvDrWJ+OIt9WEAL6a9paPUJrexjYeFbSxiZnpNZKh/BxNUfVpwQKBgQC3\nGk1KXoUce85YjP2WIsiKnmKIpBNcC3S1ZQ2tMybsWDzVjA0sLCxjPYycHOr2Vnin\nOCUonnU83mWHKg/l4t5fmZwzTLR1L1GZLrO13ZEXk68SrP8j/CGzF+ZA+cx2Sf3Z\njBtZoeNEaTmNvf20zBPp8wJ4vUvkh+rygOvdUiDSqwKBgAOT+7eZRXTBC7G7qQAc\nC0Nwa0gKGt1XEDRA63mCVVnX2IvvTFJJkq7qH+1qmaYtOI3YZ8eYYG3EyHQeguh3\n6N99vtc/qusvE5dwyJoD/pqK4OT07jaFrhFrRF0zugPBC1mqfB3hfISV6Kc+/CMt\n1z1vyp04JNKV/khrOx0yn2N7\n-----END PRIVATE KEY-----\n',
+  client_email: 'firebase-adminsdk-fbsvc@sage-x-ff6be.iam.gserviceaccount.com',
+  client_id: '116418327864338526246',
+  auth_uri: 'https://accounts.google.com/o/oauth2/auth',
+  token_uri: 'https://oauth2.googleapis.com/token',
+  auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs',
+  client_x509_cert_url: 'https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40sage-x-ff6be.iam.gserviceaccount.com',
+  universe_domain: 'googleapis.com',
+};
+
+const EMBEDDED_PROJECT_CONFIG = {
+  projectId: 'sage-x-ff6be',
+  apiKey: 'AIzaSyAOGjBGB8vaKThGOzNYiuAsuNpv-vboHOk',
+};
+
+// Fallback to file-based config if present
 const getInstallDir = (): string => {
-  // __dirname in compiled code points to dist/auth
-  // We need to go up two levels to get to the project root
   return path.join(__dirname, '..', '..');
 };
 
@@ -74,22 +92,27 @@ export class FirebaseAuth {
     if (this.initialized) return true;
 
     try {
-      // Check if service account file exists
-      if (!fs.existsSync(SERVICE_ACCOUNT_PATH)) {
-        return false;
+      let serviceAccount: any;
+
+      // Use file-based config if available, otherwise use embedded
+      if (fs.existsSync(SERVICE_ACCOUNT_PATH)) {
+        serviceAccount = JSON.parse(
+          fs.readFileSync(SERVICE_ACCOUNT_PATH, 'utf-8')
+        );
+      } else {
+        serviceAccount = EMBEDDED_SERVICE_ACCOUNT;
       }
 
-      const serviceAccount = JSON.parse(
-        fs.readFileSync(SERVICE_ACCOUNT_PATH, 'utf-8')
-      );
-
-      // Load Google Services config for API key
+      // Load project config
       if (fs.existsSync(GOOGLE_SERVICES_PATH)) {
         const googleServices: GoogleServicesConfig = JSON.parse(
           fs.readFileSync(GOOGLE_SERVICES_PATH, 'utf-8')
         );
         this.projectId = googleServices.project_info.project_id;
         this.apiKey = googleServices.client[0].api_key[0].current_key;
+      } else {
+        this.projectId = EMBEDDED_PROJECT_CONFIG.projectId;
+        this.apiKey = EMBEDDED_PROJECT_CONFIG.apiKey;
       }
 
       // Initialize Firebase Admin
@@ -784,7 +807,7 @@ export class FirebaseAuth {
    * Check if Firebase is configured
    */
   isConfigured(): boolean {
-    return fs.existsSync(SERVICE_ACCOUNT_PATH) && fs.existsSync(GOOGLE_SERVICES_PATH);
+    return true;
   }
 }
 
